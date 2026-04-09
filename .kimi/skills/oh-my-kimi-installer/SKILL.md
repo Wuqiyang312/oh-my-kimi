@@ -1,11 +1,25 @@
 ---
 name: oh-my-kimi-installer
-description: 安装和管理 oh-my-kimi 插件。当用户需要安装、更新、重新安装或排查 oh-my-kimi 插件问题时使用。支持本地路径安装和 GitHub 仓库安装。
+description: |
+  安装和管理 oh-my-kimi 插件及其相关 skills。
+  当用户需要安装、更新、重新安装或排查 oh-my-kimi 插件问题时使用。
+  支持本地路径安装和 GitHub 仓库安装。
 ---
 
 # Oh My Kimi 插件安装器
 
 帮助用户安装和管理 oh-my-kimi 插件。
+
+## 功能模块
+
+oh-my-kimi 插件按功能分为多个 skill 模块：
+
+| Skill | 功能 | 触发场景 |
+|-------|------|----------|
+| `oh-my-kimi-search` | 文件搜索 | 查找文件、搜索内容 |
+| `oh-my-kimi-code` | 代码分析 | 分析代码结构、统计项目 |
+| `oh-my-kimi-github` | GitHub 分析 | 分析 Issues/PRs |
+| `oh-my-kimi-installer` | 安装管理 | 安装、更新、故障排除 |
 
 ## 安装方法
 
@@ -88,14 +102,14 @@ echo '{"pattern": "*.py"}' | python3 scripts/smart_glob.py
 echo '{"path": "."}' | python3 scripts/project_stats.py
 ```
 
-## 文件结构
+## 工具清单
 
 插件安装后会包含以下工具：
 
-| 工具 | 功能 |
-|------|------|
-| `smart_glob` | 基于模式匹配查找文件 |
-| `smart_grep` | 基于正则表达式搜索文件内容 |
-| `code_analyze` | 分析 Python 代码结构 |
-| `project_stats` | 统计项目代码量和结构 |
-| `github_triage` | 分析 GitHub 仓库 Issues 和 PRs |
+| 工具 | 功能 | 所属 Skill |
+|------|------|------------|
+| `smart_glob` | 基于模式匹配查找文件 | oh-my-kimi-search |
+| `smart_grep` | 基于正则表达式搜索文件内容 | oh-my-kimi-search |
+| `code_analyze` | 分析 Python 代码结构 | oh-my-kimi-code |
+| `project_stats` | 统计项目代码量和结构 | oh-my-kimi-code |
+| `github_triage` | 分析 GitHub 仓库 Issues 和 PRs | oh-my-kimi-github |
