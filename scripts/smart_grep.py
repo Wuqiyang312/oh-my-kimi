@@ -311,31 +311,71 @@ def run_grep(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="基于正则表达式搜索文件内容",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=USAGE_GUIDE,
-    )
-    parser.add_argument("pattern", help="正则表达式搜索模式")
-    parser.add_argument("--path", default=".", help="搜索目录，默认为当前目录")
-    parser.add_argument("--include", help="文件类型过滤，如 '*.py'")
-    parser.add_argument(
-        "--output_mode",
-        choices=["content", "files_with_matches", "count"],
-        default="files_with_matches",
-        help="输出模式",
-    )
-    parser.add_argument("--head_limit", type=int, default=0, help="输出结果数量限制，0 表示无限制")
-    
-    args = parser.parse_args()
+    # 检查是否有 stdin 输入（Kimi CLI 工具调用方式）
+    if not sys.stdin.isatty():
+        try:
+            params = json.load(sys.stdin)
+            pattern = params.get("pattern")
+            path = params.get("path", ".")
+            include = params.get("include")
+            output_mode = params.get("output_mode", "files_with_matches")
+            head_limit = params.get("head_limit", 0)
+            if not pattern:
+                raise ValueError("pattern 参数是必需的")
+        except json.JSONDecodeError:
+            # 如果不是有效的 JSON，回退到命令行参数解析
+            parser = argparse.ArgumentParser(
+                description="基于正则表达式搜索文件内容",
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                epilog=USAGE_GUIDE,
+            )
+            parser.add_argument("pattern", help="正则表达式搜索模式")
+            parser.add_argument("--path", default=".", help="搜索目录，默认为当前目录")
+            parser.add_argument("--include", help="文件类型过滤，如 '*.py'")
+            parser.add_argument(
+                "--output_mode",
+                choices=["content", "files_with_matches", "count"],
+                default="files_with_matches",
+                help="输出模式",
+            )
+            parser.add_argument("--head_limit", type=int, default=0, help="输出结果数量限制，0 表示无限制")
+            args = parser.parse_args()
+            pattern = args.pattern
+            path = args.path
+            include = args.include
+            output_mode = args.output_mode
+            head_limit = args.head_limit
+    else:
+        # 命令行模式
+        parser = argparse.ArgumentParser(
+            description="基于正则表达式搜索文件内容",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=USAGE_GUIDE,
+        )
+        parser.add_argument("pattern", help="正则表达式搜索模式")
+        parser.add_argument("--path", default=".", help="搜索目录，默认为当前目录")
+        parser.add_argument("--include", help="文件类型过滤，如 '*.py'")
+        parser.add_argument(
+            "--output_mode",
+            choices=["content", "files_with_matches", "count"],
+            default="files_with_matches",
+            help="输出模式",
+        )
+        parser.add_argument("--head_limit", type=int, default=0, help="输出结果数量限制，0 表示无限制")
+        args = parser.parse_args()
+        pattern = args.pattern
+        path = args.path
+        include = args.include
+        output_mode = args.output_mode
+        head_limit = args.head_limit
     
     try:
         result = run_grep(
-            args.pattern,
-            args.path,
-            args.include,
-            args.output_mode,
-            args.head_limit,
+            pattern,
+            path,
+            include,
+            output_mode,
+            head_limit,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except FileNotFoundError as e:

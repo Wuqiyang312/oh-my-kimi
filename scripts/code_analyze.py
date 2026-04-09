@@ -256,22 +256,47 @@ def run_analysis(path: str, include_tests: bool) -> dict[str, Any]:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="分析 Python 代码结构",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=USAGE_GUIDE,
-    )
-    parser.add_argument("--path", required=True, help="Python 文件或目录路径")
-    parser.add_argument(
-        "--include_tests",
-        action="store_true",
-        help="包含测试文件 (test_*.py, *_test.py)",
-    )
-    
-    args = parser.parse_args()
+    # 检查是否有 stdin 输入（Kimi CLI 工具调用方式）
+    if not sys.stdin.isatty():
+        try:
+            params = json.load(sys.stdin)
+            path = params.get("path", ".")
+            include_tests = params.get("include_tests", False)
+        except json.JSONDecodeError:
+            # 如果不是有效的 JSON，回退到命令行参数解析
+            parser = argparse.ArgumentParser(
+                description="分析 Python 代码结构",
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                epilog=USAGE_GUIDE,
+            )
+            parser.add_argument("--path", required=True, help="Python 文件或目录路径")
+            parser.add_argument(
+                "--include_tests",
+                action="store_true",
+                help="包含测试文件 (test_*.py, *_test.py)",
+            )
+            args = parser.parse_args()
+            path = args.path
+            include_tests = args.include_tests
+    else:
+        # 命令行模式
+        parser = argparse.ArgumentParser(
+            description="分析 Python 代码结构",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=USAGE_GUIDE,
+        )
+        parser.add_argument("--path", required=True, help="Python 文件或目录路径")
+        parser.add_argument(
+            "--include_tests",
+            action="store_true",
+            help="包含测试文件 (test_*.py, *_test.py)",
+        )
+        args = parser.parse_args()
+        path = args.path
+        include_tests = args.include_tests
     
     try:
-        result = run_analysis(args.path, args.include_tests)
+        result = run_analysis(path, include_tests)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except FileNotFoundError as e:
         print(json.dumps({

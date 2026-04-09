@@ -180,19 +180,46 @@ def run_glob(pattern: str, path: str, limit: int) -> dict[str, Any]:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="基于模式匹配查找文件",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=USAGE_GUIDE,
-    )
-    parser.add_argument("pattern", help="文件匹配模式，如 '**/*.py'")
-    parser.add_argument("--path", default=".", help="搜索目录，默认为当前目录")
-    parser.add_argument("--limit", type=int, default=100, help="返回结果数量限制，0 表示无限制")
-    
-    args = parser.parse_args()
+    # 检查是否有 stdin 输入（Kimi CLI 工具调用方式）
+    if not sys.stdin.isatty():
+        try:
+            params = json.load(sys.stdin)
+            pattern = params.get("pattern")
+            path = params.get("path", ".")
+            limit = params.get("limit", 100)
+            if not pattern:
+                raise ValueError("pattern 参数是必需的")
+        except json.JSONDecodeError:
+            # 如果不是有效的 JSON，回退到命令行参数解析
+            parser = argparse.ArgumentParser(
+                description="基于模式匹配查找文件",
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                epilog=USAGE_GUIDE,
+            )
+            parser.add_argument("pattern", help="文件匹配模式，如 '**/*.py'")
+            parser.add_argument("--path", default=".", help="搜索目录，默认为当前目录")
+            parser.add_argument("--limit", type=int, default=100, help="返回结果数量限制，0 表示无限制")
+            args = parser.parse_args()
+            pattern = args.pattern
+            path = args.path
+            limit = args.limit
+    else:
+        # 命令行模式
+        parser = argparse.ArgumentParser(
+            description="基于模式匹配查找文件",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=USAGE_GUIDE,
+        )
+        parser.add_argument("pattern", help="文件匹配模式，如 '**/*.py'")
+        parser.add_argument("--path", default=".", help="搜索目录，默认为当前目录")
+        parser.add_argument("--limit", type=int, default=100, help="返回结果数量限制，0 表示无限制")
+        args = parser.parse_args()
+        pattern = args.pattern
+        path = args.path
+        limit = args.limit
     
     try:
-        result = run_glob(args.pattern, args.path, args.limit)
+        result = run_glob(pattern, path, limit)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except FileNotFoundError as e:
         print(json.dumps({

@@ -317,37 +317,83 @@ def format_summary(result: dict[str, Any]) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="分析 GitHub 仓库的 Issues 和 PRs",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=USAGE_GUIDE,
-    )
-    parser.add_argument("--repo", required=True, help="GitHub 仓库 (owner/repo)")
-    parser.add_argument(
-        "--item_type",
-        choices=["issues", "prs", "all"],
-        default="all",
-        help="获取类型",
-    )
-    parser.add_argument(
-        "--state",
-        choices=["open", "closed", "all"],
-        default="open",
-        help="状态过滤",
-    )
-    parser.add_argument(
-        "--output_format",
-        choices=["json", "summary"],
-        default="summary",
-        help="输出格式",
-    )
-    
-    args = parser.parse_args()
+    # 检查是否有 stdin 输入（Kimi CLI 工具调用方式）
+    if not sys.stdin.isatty():
+        try:
+            params = json.load(sys.stdin)
+            repo = params.get("repo")
+            item_type = params.get("item_type", "all")
+            state = params.get("state", "open")
+            output_format = params.get("output_format", "summary")
+            if not repo:
+                raise ValueError("repo 参数是必需的")
+        except json.JSONDecodeError:
+            # 如果不是有效的 JSON，回退到命令行参数解析
+            parser = argparse.ArgumentParser(
+                description="分析 GitHub 仓库的 Issues 和 PRs",
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                epilog=USAGE_GUIDE,
+            )
+            parser.add_argument("--repo", required=True, help="GitHub 仓库 (owner/repo)")
+            parser.add_argument(
+                "--item_type",
+                choices=["issues", "prs", "all"],
+                default="all",
+                help="获取类型",
+            )
+            parser.add_argument(
+                "--state",
+                choices=["open", "closed", "all"],
+                default="open",
+                help="状态过滤",
+            )
+            parser.add_argument(
+                "--output_format",
+                choices=["json", "summary"],
+                default="summary",
+                help="输出格式",
+            )
+            args = parser.parse_args()
+            repo = args.repo
+            item_type = args.item_type
+            state = args.state
+            output_format = args.output_format
+    else:
+        # 命令行模式
+        parser = argparse.ArgumentParser(
+            description="分析 GitHub 仓库的 Issues 和 PRs",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=USAGE_GUIDE,
+        )
+        parser.add_argument("--repo", required=True, help="GitHub 仓库 (owner/repo)")
+        parser.add_argument(
+            "--item_type",
+            choices=["issues", "prs", "all"],
+            default="all",
+            help="获取类型",
+        )
+        parser.add_argument(
+            "--state",
+            choices=["open", "closed", "all"],
+            default="open",
+            help="状态过滤",
+        )
+        parser.add_argument(
+            "--output_format",
+            choices=["json", "summary"],
+            default="summary",
+            help="输出格式",
+        )
+        args = parser.parse_args()
+        repo = args.repo
+        item_type = args.item_type
+        state = args.state
+        output_format = args.output_format
     
     try:
-        result = run_triage(args.repo, args.item_type, args.state, args.output_format)
+        result = run_triage(repo, item_type, state, output_format)
         
-        if args.output_format == "summary":
+        if output_format == "summary":
             print(format_summary(result))
         else:
             print(json.dumps(result, ensure_ascii=False, indent=2))

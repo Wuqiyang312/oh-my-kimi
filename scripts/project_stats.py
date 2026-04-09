@@ -17,6 +17,7 @@
 import argparse
 import json
 import os
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -324,32 +325,66 @@ def format_summary(result: dict[str, Any]) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="统计项目代码量和结构",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=USAGE_GUIDE,
-    )
-    parser.add_argument("--path", default=".", help="项目目录路径，默认为当前目录")
-    parser.add_argument(
-        "--exclude",
-        default="node_modules,__pycache__,.git,venv,.venv,dist,build,.idea,.vscode",
-        help="排除模式，逗号分隔",
-    )
-    parser.add_argument(
-        "--output_format",
-        choices=["json", "summary"],
-        default="json",
-        help="输出格式",
-    )
+    # 检查是否有 stdin 输入（Kimi CLI 工具调用方式）
+    if not sys.stdin.isatty():
+        try:
+            params = json.load(sys.stdin)
+            path = params.get("path", ".")
+            exclude = params.get("exclude", "node_modules,__pycache__,.git,venv,.venv,dist,build,.idea,.vscode")
+            output_format = params.get("output_format", "json")
+        except json.JSONDecodeError:
+            # 如果不是有效的 JSON，回退到命令行参数解析
+            parser = argparse.ArgumentParser(
+                description="统计项目代码量和结构",
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                epilog=USAGE_GUIDE,
+            )
+            parser.add_argument("--path", default=".", help="项目目录路径，默认为当前目录")
+            parser.add_argument(
+                "--exclude",
+                default="node_modules,__pycache__,.git,venv,.venv,dist,build,.idea,.vscode",
+                help="排除模式，逗号分隔",
+            )
+            parser.add_argument(
+                "--output_format",
+                choices=["json", "summary"],
+                default="json",
+                help="输出格式",
+            )
+            args = parser.parse_args()
+            path = args.path
+            exclude = args.exclude
+            output_format = args.output_format
+    else:
+        # 命令行模式
+        parser = argparse.ArgumentParser(
+            description="统计项目代码量和结构",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=USAGE_GUIDE,
+        )
+        parser.add_argument("--path", default=".", help="项目目录路径，默认为当前目录")
+        parser.add_argument(
+            "--exclude",
+            default="node_modules,__pycache__,.git,venv,.venv,dist,build,.idea,.vscode",
+            help="排除模式，逗号分隔",
+        )
+        parser.add_argument(
+            "--output_format",
+            choices=["json", "summary"],
+            default="json",
+            help="输出格式",
+        )
+        args = parser.parse_args()
+        path = args.path
+        exclude = args.exclude
+        output_format = args.output_format
     
-    args = parser.parse_args()
-    
-    exclude_patterns = [p.strip() for p in args.exclude.split(",")]
+    exclude_patterns = [p.strip() for p in exclude.split(",")]
     
     try:
-        result = analyze_project(args.path, exclude_patterns)
+        result = analyze_project(path, exclude_patterns)
         
-        if args.output_format == "summary":
+        if output_format == "summary":
             print(format_summary(result))
         else:
             print(json.dumps(result, ensure_ascii=False, indent=2))
